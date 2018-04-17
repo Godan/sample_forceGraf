@@ -1,0 +1,37 @@
+version: '2'
+
+services:
+  # nginx-proxy
+  proxy:
+    image: jwilder/nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # コンテナイベントの取得のためにdocker.sockをro[Read Only]でマウント
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./volumes/server/:/etc/nginx/certs:ro
+    restart: always
+    privileged: true
+
+  app:
+    image: debian:jessie
+    environment:
+      - "TZ=Japan"
+    volumes:
+      - ./src/server/:/var/www/html
+  php:
+    image: php:7.0-apache
+    volumes_from:
+      - app
+    expose:
+      - "80"
+    environment:
+      ENVIRONMENT: 0
+      TZ: Japan
+      VIRTUAL_HOST: app.*
+
+networks:
+  default:
+    external:
+      name: ecsupli
